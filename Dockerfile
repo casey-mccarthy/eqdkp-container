@@ -1,14 +1,59 @@
-# Use an official PHP image with Apache
-FROM php:7.4-apache
+# Use an official Ubuntu 24.04 image as the base
+FROM ubuntu:24.04
+
+# Set environment variable to avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Update package list
 RUN apt-get update
 
+# Install software-properties-common and dependencies
+RUN apt-get install -y software-properties-common lsb-release apt-transport-https ca-certificates
+
+# Add PHP PPA repository
+RUN add-apt-repository ppa:ondrej/php
+
+# Update package list again after adding PPA
+RUN apt-get update
+
+# Install PHP 7.4
+RUN apt-get install -y php7.4
+
+# Install PHP MySQL extension
+RUN apt-get install -y php7.4-mysql
+
+# Install PHP cURL extension
+RUN apt-get install -y php7.4-curl
+
+# Install PHP GD extension
+RUN apt-get install -y php7.4-gd
+
+# Install PHP XML extension
+RUN apt-get install -y php7.4-xml
+
+# Install PHP Multibyte String extension
+RUN apt-get install -y php7.4-mbstring
+
+# Install PHP JSON extension
+RUN apt-get install -y php7.4-json
+
+# Install PHP ZIP extension
+RUN apt-get install -y php7.4-zip
+
+# Install Apache2
+RUN apt-get install -y apache2
+
+# Install Apache2 PHP module
+RUN apt-get install -y libapache2-mod-php7.4
+
+# Install unzip and zip utilities
+RUN apt-get install -y unzip zip
+
+# Install cURL utility
+RUN apt-get install -y curl
+
 # Install libzip-dev
 RUN apt-get install -y libzip-dev
-
-# Install zip and unzip
-RUN apt-get install -y zip unzip
 
 # Install libpng-dev
 RUN apt-get install -y libpng-dev
@@ -40,55 +85,8 @@ RUN apt-get install -y autoconf
 # Install libtool
 RUN apt-get install -y libtool
 
-# Configure zip extension
-RUN docker-php-ext-configure zip
-
-# Install PHP extensions zip
-RUN docker-php-ext-install zip
-
-# Install PHP extensions mysqli, pdo, pdo_mysql
-RUN docker-php-ext-install mysqli pdo pdo_mysql
-
-# Install PHP extensions mbstring
-RUN docker-php-ext-install mbstring
-
-# Install PHP extensions gd
-RUN docker-php-ext-install gd
-
-# Install PHP extensions xml
-RUN docker-php-ext-install xml
-
-# Install PHP extensions curl
-RUN docker-php-ext-install curl
-
-# Install PHP extensions json
-RUN docker-php-ext-install json
-
-# Install PHP extensions mhash
+# Install libmhash-dev
 RUN apt-get install -y libmhash-dev
-
-
-# Extract PHP source
-RUN docker-php-source extract
-
-# Navigate to the hash extension directory, configure, make, and install manually
-RUN cd /usr/src/php/ext/hash \
-    && phpize \
-    && ./configure \
-    && make \
-    && make install
-
-# Delete PHP source after the installation
-RUN docker-php-source delete
-
-# Install PHP extensions hash
-#RUN docker-php-ext-install hash
-
-# Install PHP extensions zlib
-RUN docker-php-ext-install zlib
-
-# Install PHP extensions openssl
-RUN docker-php-ext-install openssl
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
@@ -109,4 +107,4 @@ RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 EXPOSE 80
 
 # Start Apache server
-CMD ["apache2-foreground"]
+CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
