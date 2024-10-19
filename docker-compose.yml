@@ -1,16 +1,24 @@
 version: '3'
 
 services:
-  web:
+  eqdkp:
     build: .
-    container_name: my-web-container
+    container_name: eqdkp
     ports:
-      - "80:80"
+      - "80:80"     # HTTP for certbot challenges
+      - "443:443"   # HTTPS for secured connections
     environment:
       - DEBIAN_FRONTEND=noninteractive
     restart: always
     depends_on:
       - db
+      - certbot  # Ensure certbot runs
+    volumes:
+      - eqdkp-data:/var/www/html  # Persistent data (uploads, config, etc.)
+      - certbot-conf:/etc/letsencrypt  # Persistent mount for certbot certificates
+      - certbot-www:/var/www/certbot  # Certbot challenge directory
+    networks:
+      - eqdkp-network
 
   db:
     image: mysql:5.7
@@ -20,7 +28,25 @@ services:
       MYSQL_USER: eqdkpuser
       MYSQL_PASSWORD: eqdkppassword        
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/mysql  # Persistent MySQL data
+      - ./mysql-init-scripts/:/docker-entrypoint-initdb.d/  # Mount init scripts
+    ports:
+      - "3306:3306"
+    networks:
+      - eqdkp-network
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-conf:/etc/letsencrypt  # Persistent certificate location
+      - certbot-www:/var/www/certbot  # Persistent webroot for challenges
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done"
 
 volumes:
-  db_data:
+  db_data:  # Define named volume for MySQL data persistence
+  eqdkp-data:  # Define named volume for EQDKP dynamic files persistence
+  certbot-conf:  # Define named volume for Certbot SSL certificates
+  certbot-www:  # Define named volume for Certbot web challenge directory
+
+networks:
+  eqdkp-network:
