@@ -16,82 +16,28 @@ RUN add-apt-repository ppa:ondrej/php
 # Update package list again after adding PPA
 RUN apt-get update
 
-# Install PHP 7.4
-RUN apt-get install -y php7.4
+# Install PHP 7.4 and necessary PHP extensions
+RUN apt-get install -y \
+    php7.4 \
+    php7.4-mysql \
+    php7.4-curl \
+    php7.4-gd \
+    php7.4-xml \
+    php7.4-mbstring \
+    php7.4-json \
+    php7.4-zip \
+    libapache2-mod-php7.4
 
-# Install PHP MySQL extension
-RUN apt-get install -y php7.4-mysql
+# Install Apache2 and mod_ssl for HTTPS support
+RUN apt-get install -y apache2 ssl-cert
 
-# Install PHP cURL extension
-RUN apt-get install -y php7.4-curl
+# Install necessary build tools and libraries
+RUN apt-get install -y unzip zip curl libzip-dev libpng-dev libonig-dev libxml2-dev libssl-dev libcurl4-openssl-dev pkg-config zlib1g-dev build-essential autoconf libtool libmhash-dev
 
-# Install PHP GD extension
-RUN apt-get install -y php7.4-gd
+# Enable Apache modules: rewrite and SSL
+RUN a2enmod rewrite ssl
 
-# Install PHP XML extension
-RUN apt-get install -y php7.4-xml
-
-# Install PHP Multibyte String extension
-RUN apt-get install -y php7.4-mbstring
-
-# Install PHP JSON extension
-RUN apt-get install -y php7.4-json
-
-# Install PHP ZIP extension
-RUN apt-get install -y php7.4-zip
-
-# Install Apache2
-RUN apt-get install -y apache2
-
-# Install Apache2 PHP module
-RUN apt-get install -y libapache2-mod-php7.4
-
-# Install unzip and zip utilities
-RUN apt-get install -y unzip zip
-
-# Install cURL utility
-RUN apt-get install -y curl
-
-# Install libzip-dev
-RUN apt-get install -y libzip-dev
-
-# Install libpng-dev
-RUN apt-get install -y libpng-dev
-
-# Install libonig-dev
-RUN apt-get install -y libonig-dev
-
-# Install libxml2-dev
-RUN apt-get install -y libxml2-dev
-
-# Install libssl-dev
-RUN apt-get install -y libssl-dev
-
-# Install libcurl4-openssl-dev
-RUN apt-get install -y libcurl4-openssl-dev
-
-# Install pkg-config
-RUN apt-get install -y pkg-config
-
-# Install zlib1g-dev
-RUN apt-get install -y zlib1g-dev
-
-# Install build-essential
-RUN apt-get install -y build-essential
-
-# Install autoconf
-RUN apt-get install -y autoconf
-
-# Install libtool
-RUN apt-get install -y libtool
-
-# Install libmhash-dev
-RUN apt-get install -y libmhash-dev
-
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
-
-# Set working directory
+# Set working directory to the Apache document root
 WORKDIR /var/www/html
 
 # Download the latest EQdkp Plus core from the official site
@@ -100,11 +46,27 @@ RUN curl -L https://eqdkpplus.github.io/packages/core/eqdkp-plus_2.3.39_fullpack
 # Unzip the application into the root of /var/www/html and remove the zip file
 RUN unzip -o eqdkp-plus.zip && rm eqdkp-plus.zip
 
-# Set folder permissions
+# Set folder permissions for the web root
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Expose port 80 for Apache
-EXPOSE 80
+# Install Certbot (for SSL certificate management)
+RUN apt-get install -y certbot python3-certbot-apache
 
-# Start Apache server
+# Environment variables for Certbot (inject secrets via Docker Compose or .env file)
+ENV CERTBOT_EMAIL=${CERTBOT_EMAIL}
+ENV DOMAIN_NAME=${DOMAIN_NAME}
+
+# Expose both HTTP (80) and HTTPS (443) ports
+EXPOSE 80
+EXPOSE 443
+
+# On first boot, setup Certbot and generate SSL certificates
+RUN mkdir -p /var/www/certbot
+
+# Set entrypoint script to check for SSL certificates and run Certbot
+COPY ./certbot/certbot-entrypoint.sh /usr/local/bin/certbot-entrypoint.sh
+RUN chmod +x /usr/local/bin/certbot-entrypoint.sh
+
+# Start Apache and run Certbot in the background for certificate renewal
+ENTRYPOINT ["/usr/local/bin/certbot-entrypoint.sh"]
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
