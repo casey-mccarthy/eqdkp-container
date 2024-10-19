@@ -94,11 +94,11 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy local files to the container
-COPY ./html/eqdkp-plus.zip /var/www/html/
+# Download the latest EQdkp Plus core from the official site
+RUN curl -L https://eqdkpplus.github.io/packages/core/eqdkp-plus_2.3.39_fullpackage.zip -o eqdkp-plus.zip
 
-# Unzip the application and remove the zip file
-RUN unzip eqdkp-plus.zip && rm eqdkp-plus.zip
+# Unzip the application into the root of /var/www/html and remove the zip file
+RUN unzip -o eqdkp-plus.zip && rm eqdkp-plus.zip
 
 # Set folder permissions
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html

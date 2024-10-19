@@ -3,10 +3,12 @@ version: '3'
 services:
   web:
     build: .
+    container_name: my-web-container
     ports:
-      - "8080:80"
-    volumes:
-      - ./html:/var/www/html
+      - "80:80"
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+    restart: always
     depends_on:
       - db
 
@@ -16,7 +18,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: eqdkp
       MYSQL_USER: eqdkpuser
-      MYSQL_PASSWORD: eqdkppassword
+      MYSQL_PASSWORD: eqdkppassword        
     volumes:
       - db_data:/var/lib/mysql
 
