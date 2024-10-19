@@ -10,6 +10,12 @@ RUN apt-get update
 # Install software-properties-common and dependencies
 RUN apt-get install -y software-properties-common lsb-release apt-transport-https ca-certificates
 
+# Install snapd and Certbot via snap
+RUN apt-get install -y snapd
+RUN snap install core && snap refresh core
+RUN snap install --classic certbot
+RUN ln -s /snap/bin/certbot /usr/bin/certbot
+
 # Add PHP PPA repository
 RUN add-apt-repository ppa:ondrej/php
 
