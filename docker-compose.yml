@@ -23,6 +23,7 @@ services:
 
   db:
     image: mysql:5.7
+    container_name: eqdkp-db
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -35,6 +36,7 @@ services:
 
   certbot:
     image: certbot/certbot
+    container_name: eqdkp-certbot
     volumes:
       - certbot-conf:/etc/letsencrypt
       - certbot-www:/var/www/certbot
